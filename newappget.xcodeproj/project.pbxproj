@@ -13,6 +13,8 @@
 		504B2BF51B2E50D700B7F804 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504B2BF41B2E50D700B7F804 /* Images.xcassets */; };
 		504B2BF81B2E50D700B7F804 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 504B2BF61B2E50D700B7F804 /* LaunchScreen.xib */; };
 		504B2C041B2E50D700B7F804 /* newappgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504B2C031B2E50D700B7F804 /* newappgetTests.swift */; };
+		50D1F30D1B2E53DE005C9EFD /* SearchAPICtrl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50D1F30C1B2E53DE005C9EFD /* SearchAPICtrl.swift */; };
+		50D1F30F1B2E5D57005C9EFD /* iTunesRSSGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50D1F30E1B2E5D57005C9EFD /* iTunesRSSGenerator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +38,8 @@
 		504B2BFD1B2E50D700B7F804 /* newappgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = newappgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		504B2C021B2E50D700B7F804 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		504B2C031B2E50D700B7F804 /* newappgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = newappgetTests.swift; sourceTree = "<group>"; };
+		50D1F30C1B2E53DE005C9EFD /* SearchAPICtrl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchAPICtrl.swift; sourceTree = "<group>"; };
+		50D1F30E1B2E5D57005C9EFD /* iTunesRSSGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iTunesRSSGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +83,8 @@
 			children = (
 				504B2BED1B2E50D700B7F804 /* AppDelegate.swift */,
 				504B2BEF1B2E50D700B7F804 /* ViewController.swift */,
+				50D1F30C1B2E53DE005C9EFD /* SearchAPICtrl.swift */,
+				50D1F30E1B2E5D57005C9EFD /* iTunesRSSGenerator.swift */,
 				504B2BF11B2E50D700B7F804 /* Main.storyboard */,
 				504B2BF41B2E50D700B7F804 /* Images.xcassets */,
 				504B2BF61B2E50D700B7F804 /* LaunchScreen.xib */,
@@ -213,6 +219,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				504B2BF01B2E50D700B7F804 /* ViewController.swift in Sources */,
+				50D1F30D1B2E53DE005C9EFD /* SearchAPICtrl.swift in Sources */,
+				50D1F30F1B2E5D57005C9EFD /* iTunesRSSGenerator.swift in Sources */,
 				504B2BEE1B2E50D700B7F804 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -411,6 +419,7 @@
 				504B2C091B2E50D700B7F804 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		504B2C0A1B2E50D700B7F804 /* Build configuration list for PBXNativeTarget "newappgetTests" */ = {
 			isa = XCConfigurationList;
@@ -419,6 +428,7 @@
 				504B2C0C1B2E50D700B7F804 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
