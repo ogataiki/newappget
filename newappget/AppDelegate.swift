@@ -1,11 +1,3 @@
-//
-//  AppDelegate.swift
-//  newappget
-//
-//  Created by taiki.ogasawara on 2015/06/15.
-//  Copyright (c) 2015年 ogataiki. All rights reserved.
-//
-
 import UIKit
 
 @UIApplicationMain
