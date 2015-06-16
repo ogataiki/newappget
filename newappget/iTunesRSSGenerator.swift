@@ -46,6 +46,19 @@ class iTunesRSSGenerator
         url += "\(outputformat.rawValue)";
         return NSURL(string: url);
     }
+    
+    func makeURL_reviews(country: Country = Country.us
+        , appid: String = ""
+        , outputformat: OutputFormat = OutputFormat.json) -> NSURL!
+    {
+        var url = "\(baseURL)/";
+        url +=  "\(country.rawValue)/";
+        url += "rss/";
+        url += "customerreviews/";
+        url += "id=\(appid)/";
+        url += "\(outputformat.rawValue)";
+        return NSURL(string: url);
+    }
 }
 
 class iTunesRSSData {
@@ -78,7 +91,7 @@ class iTunesRSSData {
         
         var appname: String = "";
         
-        var price_amount: String = "";
+        var price_amount: Double = 0;
         var price_currency: String = "";
         var price_label: String = "";
         
@@ -95,6 +108,8 @@ class iTunesRSSData {
     }
     
     var enrtyList: [Entry] = [];
+    
+    var reviewsJSON: String = "{}";
 }
 
 extension iTunesRSSGenerator {
@@ -147,7 +162,7 @@ extension iTunesRSSGenerator {
             
             if let s = e["im:name"]["label"].asString { entryBuf.appname = s; }
             
-            if let s = e["im:price"]["attributes"]["amount"].asString { entryBuf.price_amount = s; }
+            if let s = e["im:price"]["attributes"]["amount"].asDouble { entryBuf.price_amount = s; }
             if let s = e["im:price"]["attributes"]["currency"].asString { entryBuf.price_currency = s; }
             if let s = e["im:price"]["label"].asString { entryBuf.price_label = s; }
 

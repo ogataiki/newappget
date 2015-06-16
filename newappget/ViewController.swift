@@ -84,34 +84,57 @@ class ViewController: UIViewController
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath:NSIndexPath) -> UITableViewCell
     {
-        let cell = AppListTableViewCell(style: UITableViewCellStyle.Subtitle, reuseIdentifier: "AppListItem");
+        let cell = tableView.dequeueReusableCellWithIdentifier("AppListItem", forIndexPath: indexPath) as! AppListTableViewCell;
 
         cell.imageView?.image = nil;
         cell.textLabel?.text = "";
-        if listdata.enrtyList.count > indexPath.row {
-            
-            let data = listdata.enrtyList[indexPath.row];
-            
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
-                
-                // 画像更新
-                let imageURL = data.images[data.images.count-1].urllabel;
-                let image = UIImage(data: NSData(contentsOfURL: NSURL(string: imageURL)!)!);
-                dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                    cell.imageView?.image = image;
-                    cell.textLabel?.text = data.appname;
-                    
-                    cell.layoutSubviews();
-                })
-            })
+        
+        let data = listdata.enrtyList[indexPath.row];
+
+        cell.appTitle?.text = data.appname;
+        cell.appGenre?.text = data.category_genre;
+        if data.price_amount == 0
+        {
+            cell.appPrice?.text = "無料";
         }
+        else
+        {
+            cell.appPrice?.text = "\(data.price_amount)";
+        }
+        
+        cell.appIcon?.image = nil;
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
+            
+            // 画像更新
+            if( data.images.count > 0 )
+            {
+                let imageURL = data.images[data.images.count-1].urllabel;
+                if let url = NSURL(string: imageURL) {
+                    if let imagedata = NSData(contentsOfURL: url) {
+                        let image = UIImage(data: imagedata);
+                        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                            cell.appIcon?.image = image;
+                            
+                            cell.layoutSubviews();
+                        })
+                    }
+                }
+            }
+        })
+        
+
         
         return cell
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath:NSIndexPath)
     {
-        
+        let data = listdata.enrtyList[indexPath.row];
+
+        let url = NSURL(string: data.link_href);
+        if UIApplication.sharedApplication().canOpenURL(url!){
+            UIApplication.sharedApplication().openURL(url!)
+        }
     }
 }
 

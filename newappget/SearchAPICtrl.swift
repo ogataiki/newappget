@@ -21,6 +21,17 @@ class SearchAPICtrl
         let encodedCountry = country.stringByAddingPercentEscapesUsingEncoding(NSUTF8StringEncoding)!;
         let encodedEntity = entity.stringByAddingPercentEscapesUsingEncoding(NSUTF8StringEncoding)!;
         
-        return NSURL(string: "\(SearchAPICtrl.baseSearchURL)&term=\(encodedTerm)&country=\(encodedCountry)&entity=\(entity)");
+        return NSURL(string: "\(SearchAPICtrl.baseSearchURL)term=\(encodedTerm)&country=\(encodedCountry)&entity=\(entity)");
     }
+    
+    func makeLookupURL(bundleid: String = ""
+        , country: String = "jp") -> NSURL!
+    {
+        return NSURL(string: "\(SearchAPICtrl.baseSearchURL)country=\(country)&bundleId=\(bundleid)");
+    }
+}
+
+extension SearchAPICtrl
+{
+    
 }

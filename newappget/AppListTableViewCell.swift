@@ -2,11 +2,8 @@ import UIKit
 
 class AppListTableViewCell: UITableViewCell {
     
-    var cellHeight: Int = 52;
-    
-    var icon: UIImage!;
-    var name: String!;
-    var genre: String!;
-    var price: String!;
-    
+    @IBOutlet weak var appIcon: UIImageView!
+    @IBOutlet weak var appTitle: UILabel!
+    @IBOutlet weak var appGenre: UILabel!
+    @IBOutlet weak var appPrice: UILabel!    
 }
