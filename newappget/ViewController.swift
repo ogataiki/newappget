@@ -10,7 +10,8 @@ class ViewController: UIViewController
     
     @IBOutlet weak var tableView: UITableView!
     
-    var listdata: iTunesRSSData!;
+    var listdata: iTunesRSSData = iTunesRSSData();
+    var listLookupData: [LookupAPIData] = [];
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,7 +44,7 @@ class ViewController: UIViewController
         }
         else
         {
-            NSLog("load error");
+            println("load error");
         }
     }
     
@@ -53,7 +54,9 @@ class ViewController: UIViewController
         if let nsstr = NSString(data: data!, encoding: NSUTF8StringEncoding)
         {
             // パース
-            listdata = iTunesRSSGenerator.instance.parseJSON(nsstr as String);
+            listdata.parseJSON(nsstr as String);
+            
+            listLookupData = [LookupAPIData](count: listdata.enrtyList.count, repeatedValue: LookupAPIData());
             
             tableView.reloadData();
         }
@@ -64,6 +67,7 @@ class ViewController: UIViewController
     }
 
     @IBAction func refreshAction(sender: UIBarButtonItem) {
+        downloadRSSFeed();
     }
     
     @IBAction func anyAction(sender: UIBarButtonItem) {
@@ -76,10 +80,7 @@ class ViewController: UIViewController
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
-        if let list = listdata {
-            return list.enrtyList.count;
-        }
-        return 0;
+        return listdata.enrtyList.count;
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath:NSIndexPath) -> UITableViewCell
@@ -92,19 +93,66 @@ class ViewController: UIViewController
         let data = listdata.enrtyList[indexPath.row];
 
         cell.appTitle?.text = data.appname;
-        cell.appGenre?.text = data.category_genre;
         if data.price_amount == 0
         {
             cell.appPrice?.text = "無料";
         }
         else
         {
-            cell.appPrice?.text = "\(data.price_amount)";
+            cell.appPrice?.text = data.price_label;
         }
         
         cell.appIcon?.image = nil;
+        cell.appGenre?.text = data.category_genre;
+        cell.appReview?.text = "";
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
             
+            var url = SearchAPICtrl.instance.makeLookupURL(bundleid: data.bundleId, country: SearchAPICtrl.Country.jp);
+            if let tmp = url
+            {
+                var myRequest: NSURLRequest = NSURLRequest(URL: url);
+                var response: NSURLResponse?;
+                var error: NSError?;
+                var res = NSURLConnection.sendSynchronousRequest(myRequest, returningResponse: &response, error: &error);
+                
+                if let httpResponse = response as? NSHTTPURLResponse
+                {
+                    if httpResponse.statusCode == 200
+                    {
+                        if let nsstr = NSString(data: res!, encoding: NSUTF8StringEncoding)
+                        {
+                            self.listLookupData[indexPath.row].parseJSON(nsstr as String);
+                            
+                            if self.listLookupData[indexPath.row].results.count > 0
+                            {
+                                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                                    
+                                    var reviewtextlabel = "評価：";
+                                    var reviewtext = String(format: "%.1f"
+                                        , self.listLookupData[indexPath.row].results[0].averageUserRating);
+                                    if reviewtext == "0.0" {
+                                        reviewtext = "なし"
+                                    }
+                                    cell.appReview?.text = reviewtextlabel + reviewtext;
+                                    
+                                    let genres = self.listLookupData[indexPath.row].results[0].genres;
+                                    let genreIds = self.listLookupData[indexPath.row].results[0].genreIds;
+                                    if genres.count >= 2 && genreIds.count >= 2 && genreIds[0] == "6014" {
+                                        cell.appGenre?.text = genres[1];
+                                    }
+                                    
+                                    cell.layoutSubviews();
+                                })
+
+                            }
+                        }
+                        else { println("response error"); }
+                    }
+                    else { println("response status:%d", httpResponse.statusCode); }
+                }
+                else { println("response error"); }
+            } else { println("load error"); }
+
             // 画像更新
             if( data.images.count > 0 )
             {

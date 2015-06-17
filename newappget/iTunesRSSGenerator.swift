@@ -10,6 +10,7 @@ class iTunesRSSGenerator
     static let instance = iTunesRSSGenerator();
     
     let baseURL = "https://itunes.apple.com";
+    
     enum Country: String {
         case us = "us"
         case jp = "jp"
@@ -61,7 +62,7 @@ class iTunesRSSGenerator
     }
 }
 
-class iTunesRSSData {
+struct iTunesRSSData {
     
     var nameLabel: String = "";
     var uriLabel: String = "";
@@ -86,6 +87,12 @@ class iTunesRSSData {
         struct Image {
             var height: String = "";
             var urllabel: String = "";
+            
+            mutating func parse(json: JSON)
+            {
+                if let s = json["attributes"]["height"].asString { height = s; }
+                if let s = json["label"].asString { urllabel = s; }
+            }
         }
         var images: [Image] = [];
         
@@ -105,82 +112,73 @@ class iTunesRSSData {
         var rights_label: String = "";
         
         var titlelabel: String = "";
+        
+        mutating func parse(json: JSON)
+        {
+            if let s = json["category"]["attributes"]["im:id"].asString { category_id = s; }
+            if let s = json["category"]["attributes"]["label"].asString { category_genre = s; }
+            if let s = json["category"]["attributes"]["scheme"].asString { category_scheme = s; }
+            if let s = json["category"]["attributes"]["term"].asString { category_term = s; }
+            
+            if let s = json["id"]["attributes"]["im:bundleId"].asString { bundleId = s; }
+            if let s = json["id"]["attributes"]["im:id"].asString { id = s; }
+            if let s = json["id"]["label"].asString { label = s; }
+            
+            if let s = json["im:artist"]["attributes"]["href"].asString { artist_href = s; }
+            if let s = json["im:artist"]["label"].asString { artist_label = s; }
+            
+            if let s = json["im:contentType"]["attributes"]["label"].asString { contenttype_label = s; }
+            if let s = json["im:contentType"]["attributes"]["term"].asString { contenttype_term = s; }
+            
+            let imageArray = json["im:image"].asArray!;
+            
+            for i in imageArray {
+                
+                var imageBuf = iTunesRSSData.Entry.Image();
+                imageBuf.parse(i);
+                images += [imageBuf];
+            }
+            
+            if let s = json["im:name"]["label"].asString { appname = s; }
+            
+            if let s = json["im:price"]["attributes"]["amount"].asString {
+                price_amount = NSString(string: s).doubleValue;
+            }
+            if let s = json["im:price"]["attributes"]["currency"].asString { price_currency = s; }
+            if let s = json["im:price"]["label"].asString { price_label = s; }
+            
+            if let s = json["im:releaseDate"]["attributes"]["label"].asString { releasedate = s; }
+            if let s = json["im:releaseDate"]["label"].asString { releasedate = s; }
+            
+            if let s = json["link"]["attributes"]["href"].asString { link_href = s; }
+            if let s = json["link"]["attributes"]["rel"].asString { link_rel = s; }
+            if let s = json["link"]["attributes"]["type"].asString { link_type = s; }
+            
+            if let s = json["rights"]["label"].asString { rights_label = s; }
+            
+            if let s = json["title"]["label"].asString { rights_label = s; }
+        }
     }
     
     var enrtyList: [Entry] = [];
     
-    var reviewsJSON: String = "{}";
-}
-
-extension iTunesRSSGenerator {
-    
-    func parseJSON(jsonStr: String) -> iTunesRSSData {
+    mutating func parseJSON(jsonStr: String) {
         
         println(jsonStr);
-        
-        var data = iTunesRSSData();
         
         let json = JSON.parse(jsonStr);
         
         let feed = json["feed"];
-
-        if let s = feed["author"]["name"]["label"].asString { data.nameLabel = s; }
-        if let s = feed["author"]["uri"]["label"].asString { data.uriLabel = s; }
+        
+        if let s = feed["author"]["name"]["label"].asString { nameLabel = s; }
+        if let s = feed["author"]["uri"]["label"].asString { uriLabel = s; }
         
         let entrys = feed["entry"].asArray!;
         
         for e in entrys {
-
             var entryBuf = iTunesRSSData.Entry();
-            
-            if let s = e["category"]["attributes"]["im:id"].asString { entryBuf.category_id = s; }
-            if let s = e["category"]["attributes"]["label"].asString { entryBuf.category_genre = s; }
-            if let s = e["category"]["attributes"]["scheme"].asString { entryBuf.category_scheme = s; }
-            if let s = e["category"]["attributes"]["term"].asString { entryBuf.category_term = s; }
-            
-            if let s = e["id"]["attributes"]["im:bundleId"].asString { entryBuf.bundleId = s; }
-            if let s = e["id"]["attributes"]["im:id"].asString { entryBuf.id = s; }
-            if let s = e["id"]["label"].asString { entryBuf.label = s; }
-
-            if let s = e["im:artist"]["attributes"]["href"].asString { entryBuf.artist_href = s; }
-            if let s = e["im:artist"]["label"].asString { entryBuf.artist_label = s; }
-            
-            if let s = e["im:contentType"]["attributes"]["label"].asString { entryBuf.contenttype_label = s; }
-            if let s = e["im:contentType"]["attributes"]["term"].asString { entryBuf.contenttype_term = s; }
-            
-            let images = e["im:image"].asArray!;
-            
-            for i in images {
-                
-                var imageBuf = iTunesRSSData.Entry.Image();
-                
-                if let s = i["attributes"]["height"].asString { imageBuf.height = s; }
-                if let s = i["label"].asString { imageBuf.urllabel = s; }
-
-                entryBuf.images += [imageBuf];
-            }
-            
-            if let s = e["im:name"]["label"].asString { entryBuf.appname = s; }
-            
-            if let s = e["im:price"]["attributes"]["amount"].asDouble { entryBuf.price_amount = s; }
-            if let s = e["im:price"]["attributes"]["currency"].asString { entryBuf.price_currency = s; }
-            if let s = e["im:price"]["label"].asString { entryBuf.price_label = s; }
-
-            if let s = e["im:releaseDate"]["attributes"]["label"].asString { entryBuf.releasedate = s; }
-            if let s = e["im:releaseDate"]["label"].asString { entryBuf.releasedate = s; }
-            
-            if let s = e["link"]["attributes"]["href"].asString { entryBuf.link_href = s; }
-            if let s = e["link"]["attributes"]["rel"].asString { entryBuf.link_rel = s; }
-            if let s = e["link"]["attributes"]["type"].asString { entryBuf.link_type = s; }
-            
-            if let s = e["rights"]["label"].asString { entryBuf.rights_label = s; }
-            
-            if let s = e["title"]["label"].asString { entryBuf.rights_label = s; }
-            
-            data.enrtyList += [entryBuf];
+            entryBuf.parse(e);
+            enrtyList += [entryBuf];
         }
-        
-        return data;
     }
 }
-
