@@ -181,4 +181,10 @@ struct iTunesRSSData {
             enrtyList += [entryBuf];
         }
     }
+    
+    mutating func reset() {
+        nameLabel = "";
+        uriLabel = "";
+        enrtyList = [];
+    }
 }
