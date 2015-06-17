@@ -57,7 +57,7 @@ class ViewController: UIViewController
         if let nsstr = NSString(data: data!, encoding: NSUTF8StringEncoding)
         {
             // パース
-            listdata.parseJSON(nsstr as String);
+            listdata.parseJSON(nsstr as String, targetGenre: [iTunesRSSGenerator.Genre.game]);
             
             listLookupData = [LookupAPIData](count: listdata.enrtyList.count, repeatedValue: LookupAPIData());
         }

@@ -29,7 +29,7 @@ class iTunesRSSGenerator
     
     enum Genre: String {
         case all = ""
-        case game = "genre=6014/"
+        case game = "6014"
     }
     
     func makeURL(country: Country = Country.us
@@ -43,7 +43,9 @@ class iTunesRSSGenerator
         url += "rss/";
         url += "\(feedtype.rawValue)/";
         url += "limit=\(limit)/";
-        url += "\(genre.rawValue)";
+        if genre != Genre.all {
+            url += "genre=\(genre.rawValue)/";
+        }
         url += "\(outputformat.rawValue)";
         return NSURL(string: url);
     }
@@ -162,7 +164,7 @@ struct iTunesRSSData {
     
     var enrtyList: [Entry] = [];
     
-    mutating func parseJSON(jsonStr: String) {
+    mutating func parseJSON(jsonStr: String, targetGenre: [iTunesRSSGenerator.Genre] = []) {
         
         println(jsonStr);
         
@@ -178,7 +180,13 @@ struct iTunesRSSData {
         for e in entrys {
             var entryBuf = iTunesRSSData.Entry();
             entryBuf.parse(e);
-            enrtyList += [entryBuf];
+            
+            for genre in targetGenre {
+                if entryBuf.category_id  == genre.rawValue {
+                    enrtyList += [entryBuf];
+                    break;
+                }
+            }
         }
     }
     
