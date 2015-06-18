@@ -13,7 +13,9 @@ class ViewController: UIViewController
     var listdata: iTunesRSSData = iTunesRSSData();
     var listLookupData: [LookupAPIData] = [];
     
-    var cell_load_stac: [AppListTableViewCell : Int] = [:];
+    var cell_load_stac: [String : UInt8] = [:];
+    
+    var isListUpdating: Bool = false;
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,6 +34,8 @@ class ViewController: UIViewController
     }
     
     func downloadRSSFeed() {
+        
+        isListUpdating = true;
         
         // 初期化
         listdata.reset();
@@ -87,6 +91,8 @@ class ViewController: UIViewController
         
         responseRSSFeed(data);
         
+        isListUpdating = false;
+        
         tableView.reloadData();
     }
 
@@ -111,6 +117,15 @@ class ViewController: UIViewController
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath:NSIndexPath) -> UITableViewCell
     {
         let cell = tableView.dequeueReusableCellWithIdentifier("AppListItem", forIndexPath: indexPath) as! AppListTableViewCell;
+        
+        // リストデータ更新中
+        if isListUpdating == true { return cell; };
+
+        cell.reuseCount = cell.reuseCount &+ 1;
+        cell_load_stac[cell.uuid] = cell.reuseCount;
+
+        let cellreusecount = cell.reuseCount;
+        let celluuid = cell.uuid;
 
         cell.imageView?.image = nil;
         cell.textLabel?.text = "";
@@ -131,16 +146,10 @@ class ViewController: UIViewController
         cell.appGenre?.text = data.category_genre;
         cell.appReview?.text = "";
         
-        if let i = cell_load_stac[cell] {
-            cell_load_stac[cell] = i + 1;
-        }
-        else {
-            cell_load_stac[cell] = 1;
-        }
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
             
             // 再利用の場合、このセルを対象に行っていたロードを無視する。
-            if self.cell_load_stac[cell]! <= 1 {
+            if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
                 
                 var url = SearchAPICtrl.instance.makeLookupURL(bundleid: data.bundleId, country: SearchAPICtrl.Country.jp);
                 if let tmp = url
@@ -161,7 +170,7 @@ class ViewController: UIViewController
                                 if self.listLookupData[indexPath.row].results.count > 0
                                 {
                                     // 再利用の場合、このセルを対象に行っていたロードを無視する。
-                                    if self.cell_load_stac[cell]! <= 1 {
+                                    if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
                                         
                                         // メインスレッドでUI更新処理
                                         dispatch_sync(dispatch_get_main_queue(), { () -> Void in
@@ -171,6 +180,18 @@ class ViewController: UIViewController
                                                 , self.listLookupData[indexPath.row].results[0].averageUserRating);
                                             if reviewtext == "0.0" {
                                                 reviewtext = "なし"
+                                            }
+                                            switch self.listLookupData[indexPath.row].results[0].averageUserRating {
+                                            case let n where n >= 4.5:
+                                                cell.appReview?.textColor = UIColor.redColor();
+                                            case let n where n >= 4.0:
+                                                cell.appReview?.textColor = UIColor.purpleColor();
+                                            case let n where n >= 3.0:
+                                                cell.appReview?.textColor = UIColor.blackColor();
+                                            case let n where n >= 2.0:
+                                                cell.appReview?.textColor = UIColor.blueColor();
+                                            default:
+                                                cell.appReview?.textColor = UIColor.lightGrayColor();
                                             }
                                             cell.appReview?.text = reviewtextlabel + reviewtext;
                                             
@@ -193,7 +214,7 @@ class ViewController: UIViewController
                 } else { println("load error"); }
                 
                 // 画像更新
-                if( data.images.count > 0 )
+                if( self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount && data.images.count > 0 )
                 {
                     let imageURL = data.images[data.images.count-1].urllabel;
                     if let url = NSURL(string: imageURL) {
@@ -201,7 +222,7 @@ class ViewController: UIViewController
                             let image = UIImage(data: imagedata);
                             
                             // 再利用の場合、このセルを対象に行っていたロードを無視する。
-                            if self.cell_load_stac[cell]! <= 1 {
+                            if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
                                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
                                     cell.appIcon?.image = image;
                                     
@@ -212,8 +233,6 @@ class ViewController: UIViewController
                     }
                 }
             }
-            
-            self.cell_load_stac[cell] = self.cell_load_stac[cell]! - 1;
         })
         
         return cell
