@@ -3,7 +3,6 @@ import UIKit
 class ReviewListController: UIViewController
     , UITableViewDataSource
     , UITableViewDelegate
-    , NSXMLParserDelegate
 {
     @IBOutlet weak var tableView: UITableView!
     
@@ -13,13 +12,21 @@ class ReviewListController: UIViewController
     var targetAppTitle: String = "";
     
     var reviewData: ReviewData = ReviewData();
+    var reviewPage: UInt = 1;
+    
+    var refreshControl: UIRefreshControl!;
     
     func setting(appId: UInt = 0, title: String = "") {
         
         targetAppId = appId;
         targetAppTitle = title;
         
+        loadReview();
+    }
+    
+    func loadReview(page: UInt = 1) {
         var url = iTunesRSSGenerator.instance.makeURL_reviews(country: iTunesRSSGenerator.Country.jp
+            , page: page
             , appid: targetAppId
             , outputformat: iTunesRSSGenerator.OutputFormat.json);
         if let tmp = url
@@ -39,11 +46,19 @@ class ReviewListController: UIViewController
         {
             // パース
             reviewData.parseJSON(nsstr as String);
+            reviewPage++;
             
             tableView.reloadData();
         }
         else { println("responseReview data error"); }
 
+        // テーブルビューのプルで読み込みだった場合は消す
+        if let refresh = self.refreshControl {
+            if refreshControl.tag == 1 {
+                refresh.endRefreshing();
+                refreshControl.tag = 0;
+            }
+        }
     }
     
     override func viewDidLoad() {
@@ -54,9 +69,38 @@ class ReviewListController: UIViewController
         tableView.delegate = self;
         tableView.rowHeight = UITableViewAutomaticDimension;
         
+        // 引っ張ってロードする
+        refreshControl = UIRefreshControl()
+        refreshControl.attributedTitle = NSAttributedString(string: "次を読み込み中")
+        refreshControl.addTarget(self, action: "nextLoading", forControlEvents: UIControlEvents.ValueChanged)
+        refreshControl.tag = 0;
+        tableView.addSubview(refreshControl);
+        
         viewTitle.title = "\(targetAppTitle) のレビュー";
     }
     
+    @IBAction func backLoadingAction(sender: AnyObject) {
+        backLoading();
+    }
+    @IBAction func nextLoadingAction(sender: AnyObject) {
+        nextLoading();
+    }
+    
+    func nextLoading() {
+        
+        refreshControl.tag = 1;
+        reviewPage++;
+        loadReview(page: reviewPage);
+    }
+    func backLoading() {
+        
+        if reviewPage > 1 {
+            refreshControl.tag = 1;
+            reviewPage--;
+            loadReview(page: reviewPage);
+        }
+    }
+
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -68,59 +112,6 @@ class ReviewListController: UIViewController
     }
     
     
-    //
-    // XMLパーサ
-    //
-    func parserDidStartDocument(parser: NSXMLParser)
-    {
-        // Itemオブジェクトを格納するItems配列の初期化など
-    }
-    func parserDidEndDocument(parser: NSXMLParser)
-    {
-        // XMLから読み込んだ情報より画面を更新する処理など
-    }
-    // タグの最初
-    func parser(parser: NSXMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [NSObject : AnyObject])
-    {
-        /*
-        let _ParseKey = elementName
-        
-        if elementName == "Items" {
-            // Itemオブジェクトを保存するItems配列を初期化
-            var _Items = []
-            
-        } else if elementName == "Item" {
-            // Itemオブジェクトの初期化
-            var _Item = Item()
-        }
-        */
-    }
-    // タグの最後
-    func parser(parser: NSXMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?)
-    {
-        /*
-        if elementName == "Item" {
-            var _Items.append(_Item!)
-        }
-        
-        var _ParseKey = ""
-        */
-    }
-    // 各項目
-    func parser(parser: NSXMLParser, foundCharacters string: String?)
-    {
-        /*
-        if var _ParseKey == "ItemName" {
-            _Item!.itemName = string
-            
-        } else if _ParseKey == "ItemPrice" {
-            _Item!.itemPrice = string.toInt()
-            
-        } else {
-            // nop
-        }
-        */
-    }
     
     //
     // テーブルビュー

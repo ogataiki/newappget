@@ -275,6 +275,10 @@ struct ReviewData {
     var releasedate_month: String = "";
     var releasedate_day: String = "";
 
+    var updated: String = "";
+    
+    var link_lists: [String:String] = [:];
+    
     mutating func parseEntryFirst(json: JSON)
     {
         if let s = json["im:name"]["label"].asString { appname_label = s; }
@@ -383,9 +387,6 @@ struct ReviewData {
         println(jsonStr);
         
         let json = JSON.parse(jsonStr);
-        println("--- json.toString start ---");
-        println(json.toString());
-        println("--- json.toString end   ---");
         
         let feed = json["feed"];
         
@@ -405,6 +406,16 @@ struct ReviewData {
                     enrtyList += [entryBuf];
                 }
                 index++;
+            }
+        }
+        
+        if let linkArray = feed["link"].asArray {
+            for i in linkArray {
+                if let rel = i["attributes"]["rel"].asString {
+                    if let href = i["attributes"]["href"].asString {
+                        link_lists[rel] = href;
+                    }
+                }
             }
         }
     }

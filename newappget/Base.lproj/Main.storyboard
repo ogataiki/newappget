@@ -210,6 +210,16 @@
                                         </connections>
                                     </barButtonItem>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="f2a-DM-P0R"/>
+                                    <barButtonItem title="前へ" id="4hN-ed-RyI" userLabel="LoadBack">
+                                        <connections>
+                                            <action selector="backLoadingAction:" destination="BwH-vU-jd0" id="cdN-xu-ryM"/>
+                                        </connections>
+                                    </barButtonItem>
+                                    <barButtonItem title="次へ" id="jf8-5C-u5m" userLabel="LoadNext">
+                                        <connections>
+                                            <action selector="nextLoadingAction:" destination="BwH-vU-jd0" id="DUX-g1-bEe"/>
+                                        </connections>
+                                    </barButtonItem>
                                 </items>
                             </toolbar>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="DxX-P1-T2W">
