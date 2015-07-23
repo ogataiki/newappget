@@ -12,6 +12,7 @@ class ViewController: UIViewController
     
     var listdata: iTunesRSSData = iTunesRSSData();
     var listLookupData: [LookupAPIData] = [];
+    var searchData = SearchAPIData();
     
     var cell_load_stac: [String : UInt8] = [:];
     
@@ -25,12 +26,36 @@ class ViewController: UIViewController
         tableView.delegate = self;
         
         // リストデータ更新
-        downloadRSSFeed();
+        //downloadRSSFeed();
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    func downloadSearchList(term: String) {
+        var url = SearchAPICtrl.instance.makeSearchURL(term: term);
+        if let tmp = url
+        {
+            var myRequest:NSURLRequest  = NSURLRequest(URL: url);
+            NSURLConnection.sendAsynchronousRequest(myRequest
+                , queue: NSOperationQueue.mainQueue()
+                , completionHandler: self.responseSearchList)
+        }
+        else{ println("downloadSearchList load error"); }
+    }
+    func responseSearchList(res:NSURLResponse?, data:NSData?, error:NSError?) {
+        
+        // レスポンスをを文字列に変換.
+        if let nsstr = NSString(data: data!, encoding: NSUTF8StringEncoding)
+        {
+            // パース
+            searchData.parseJSON(nsstr as String);
+            
+            tableView.reloadData();
+        }
+        else { println("downloadSearchList data error"); }
     }
     
     func downloadRSSFeed() {
@@ -42,7 +67,7 @@ class ViewController: UIViewController
         
         var url = iTunesRSSGenerator.instance.makeURL(country: iTunesRSSGenerator.Country.jp
             , feedtype: iTunesRSSGenerator.FeedType.newfreeapp
-            , limit: 200
+            , limit: 0
             , outputformat: iTunesRSSGenerator.OutputFormat.json
             , genre: iTunesRSSGenerator.Genre.game);
         if let tmp = url
@@ -61,7 +86,12 @@ class ViewController: UIViewController
         if let nsstr = NSString(data: data!, encoding: NSUTF8StringEncoding)
         {
             // パース
-            listdata.parseJSON(nsstr as String, targetGenre: [iTunesRSSGenerator.Genre.game]);
+            listdata.parseJSON(nsstr as String
+                , targetGenre: [iTunesRSSGenerator.Genre.game]
+                , targetYear: "2015"
+                , targetMonth: "07"
+                , targetDay: "01"
+            );
             
             listLookupData = [LookupAPIData](count: listdata.enrtyList.count, repeatedValue: LookupAPIData());
         }
@@ -74,7 +104,7 @@ class ViewController: UIViewController
         
         var url = iTunesRSSGenerator.instance.makeURL(country: iTunesRSSGenerator.Country.jp
             , feedtype: iTunesRSSGenerator.FeedType.newpaidapp
-            , limit: 200
+            , limit: 0
             , outputformat: iTunesRSSGenerator.OutputFormat.json
             , genre: iTunesRSSGenerator.Genre.game);
         if let tmp = url
@@ -98,7 +128,40 @@ class ViewController: UIViewController
 
 
     @IBAction func refreshAction(sender: UIBarButtonItem) {
-        downloadRSSFeed();
+        //downloadRSSFeed();
+        
+        let alert = UIAlertController(title:"termを入力",
+            message: "",
+            preferredStyle: UIAlertControllerStyle.Alert)
+        
+        let cancelAction:UIAlertAction = UIAlertAction(title: "やめる",
+            style: UIAlertActionStyle.Cancel,
+            handler:{
+                (action:UIAlertAction!) -> Void in
+        })
+        let defaultAction:UIAlertAction = UIAlertAction(title: "検索",
+            style: UIAlertActionStyle.Default,
+            handler:{
+                (action:UIAlertAction!) -> Void in
+                let textFields:Array<UITextField>? =  alert.textFields as! Array<UITextField>?
+                if textFields != nil {
+                    for textField:UITextField in textFields! {
+                        self.downloadSearchList(textField.text);
+                    }
+                }
+        })
+        alert.addAction(cancelAction)
+        alert.addAction(defaultAction)
+        
+        //textfiledの追加
+        alert.addTextFieldWithConfigurationHandler({(text:UITextField!) -> Void in
+        })
+        //実行した分textfiledを追加される。
+        /*
+        alert.addTextFieldWithConfigurationHandler({(text:UITextField!) -> Void in
+        })
+        */
+        presentViewController(alert, animated: true, completion: nil)
     }
     
     @IBAction func anyAction(sender: UIBarButtonItem) {
@@ -111,7 +174,8 @@ class ViewController: UIViewController
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
-        return listdata.enrtyList.count;
+        //return listdata.enrtyList.count;
+        return searchData.results.count;
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath:NSIndexPath) -> UITableViewCell
@@ -130,6 +194,7 @@ class ViewController: UIViewController
         cell.imageView?.image = nil;
         cell.textLabel?.text = "";
         
+        /*
         let data = listdata.enrtyList[indexPath.row];
 
         cell.appTitle?.text = data.appname;
@@ -234,18 +299,120 @@ class ViewController: UIViewController
                 }
             }
         })
+        */
         
+        let data = searchData.results[indexPath.row];
+        
+        cell.appTitle?.text = data.trackName;
+        cell.appPrice?.text = data.formattedPrice;
+        
+        cell.appIcon?.image = nil;
+        cell.appGenre?.text = data.primaryGenreName;
+        cell.appReview?.text = "";
+        
+        var reviewtextlabel = "評価：";
+        var reviewtext = String(format: "%.1f", data.averageUserRating);
+        if reviewtext == "0.0" {
+            reviewtext = "なし"
+        }
+        switch data.averageUserRating {
+        case let n where n >= 4.5:
+            cell.appReview?.textColor = UIColor.redColor();
+        case let n where n >= 4.0:
+            cell.appReview?.textColor = UIColor.purpleColor();
+        case let n where n >= 3.0:
+            cell.appReview?.textColor = UIColor.blackColor();
+        case let n where n >= 2.0:
+            cell.appReview?.textColor = UIColor.blueColor();
+        default:
+            cell.appReview?.textColor = UIColor.lightGrayColor();
+        }
+        cell.appReview?.text = reviewtextlabel + reviewtext;
+        
+        let genres = data.genres;
+        let genreIds = data.genreIds;
+        if genres.count >= 2 && genreIds.count >= 2 && genreIds[0] == "6014" {
+            cell.appGenre?.text = genres[1];
+        }
+
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
+            
+            // 再利用の場合、このセルを対象に行っていたロードを無視する。
+            // 画像更新
+            if( self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount)
+            {
+                let imageURL = data.artworkUrl100;
+                if let url = NSURL(string: imageURL) {
+                    if let imagedata = NSData(contentsOfURL: url) {
+                        let image = UIImage(data: imagedata);
+                        
+                        // 再利用の場合、このセルを対象に行っていたロードを無視する。
+                        if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
+                            dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                                cell.appIcon?.image = image;
+                                
+                                cell.layoutSubviews();
+                            })
+                        }
+                    }
+                }
+            }
+        })
+
         return cell
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath:NSIndexPath)
     {
+        /*
         let data = listdata.enrtyList[indexPath.row];
 
         let url = NSURL(string: data.link_href);
         if UIApplication.sharedApplication().canOpenURL(url!){
             UIApplication.sharedApplication().openURL(url!)
         }
+        */
+        
+        // ハイライト消す
+        tableView.deselectRowAtIndexPath(indexPath, animated: true);
+        
+        let data = searchData.results[indexPath.row];
+        
+        let alert = UIAlertController(title:"なにする？",
+            message: "",
+            preferredStyle: UIAlertControllerStyle.Alert)
+        
+        let cancelAction:UIAlertAction = UIAlertAction(title: "やめる",
+            style: UIAlertActionStyle.Cancel,
+            handler:{
+                (action:UIAlertAction!) -> Void in
+        })
+        let storeAction:UIAlertAction = UIAlertAction(title: "AppStoreへ",
+            style: UIAlertActionStyle.Default,
+            handler:{
+                (action:UIAlertAction!) -> Void in
+                //ストアへ
+                let url = NSURL(string: data.trackViewUrl);
+                if UIApplication.sharedApplication().canOpenURL(url!){
+                    UIApplication.sharedApplication().openURL(url!)
+                }
+        })
+        let reviewAction:UIAlertAction = UIAlertAction(title: "レビュー表示",
+            style: UIAlertActionStyle.Default,
+            handler:{
+                (action:UIAlertAction!) -> Void in
+                //レビューリストクラスへ
+                let storyboard:UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+                let nextview = storyboard.instantiateViewControllerWithIdentifier("ReviewListController") as! ReviewListController
+                nextview.modalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
+                nextview.setting(appId: data.trackId, title: data.trackName);
+                self.presentViewController(nextview, animated: true, completion: nil)
+        })
+        alert.addAction(cancelAction)
+        alert.addAction(storeAction)
+        alert.addAction(reviewAction)
+        
+        presentViewController(alert, animated: true, completion: nil)
     }
 }
 

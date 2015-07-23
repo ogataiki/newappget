@@ -15,6 +15,8 @@
 		504B2BF51B2E50D700B7F804 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504B2BF41B2E50D700B7F804 /* Images.xcassets */; };
 		504B2BF81B2E50D700B7F804 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 504B2BF61B2E50D700B7F804 /* LaunchScreen.xib */; };
 		504B2C041B2E50D700B7F804 /* newappgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504B2C031B2E50D700B7F804 /* newappgetTests.swift */; };
+		50CEE1BA1B5E1A4700DC0BD3 /* ReviewListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CEE1B91B5E1A4700DC0BD3 /* ReviewListController.swift */; };
+		50CEE1BC1B5E1AB800DC0BD3 /* ReviewListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CEE1BB1B5E1AB800DC0BD3 /* ReviewListTableViewCell.swift */; };
 		50D1F30D1B2E53DE005C9EFD /* SearchAPICtrl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50D1F30C1B2E53DE005C9EFD /* SearchAPICtrl.swift */; };
 		50D1F30F1B2E5D57005C9EFD /* iTunesRSSGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50D1F30E1B2E5D57005C9EFD /* iTunesRSSGenerator.swift */; };
 /* End PBXBuildFile section */
@@ -42,6 +44,8 @@
 		504B2BFD1B2E50D700B7F804 /* newappgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = newappgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		504B2C021B2E50D700B7F804 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		504B2C031B2E50D700B7F804 /* newappgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = newappgetTests.swift; sourceTree = "<group>"; };
+		50CEE1B91B5E1A4700DC0BD3 /* ReviewListController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReviewListController.swift; sourceTree = "<group>"; };
+		50CEE1BB1B5E1AB800DC0BD3 /* ReviewListTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReviewListTableViewCell.swift; sourceTree = "<group>"; };
 		50D1F30C1B2E53DE005C9EFD /* SearchAPICtrl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchAPICtrl.swift; sourceTree = "<group>"; };
 		50D1F30E1B2E5D57005C9EFD /* iTunesRSSGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iTunesRSSGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -88,6 +92,8 @@
 				504B2BED1B2E50D700B7F804 /* AppDelegate.swift */,
 				504B2BEF1B2E50D700B7F804 /* ViewController.swift */,
 				500A1B701B2F9C5D008FF217 /* AppListTableViewCell.swift */,
+				50CEE1B91B5E1A4700DC0BD3 /* ReviewListController.swift */,
+				50CEE1BB1B5E1AB800DC0BD3 /* ReviewListTableViewCell.swift */,
 				50D1F30C1B2E53DE005C9EFD /* SearchAPICtrl.swift */,
 				50D1F30E1B2E5D57005C9EFD /* iTunesRSSGenerator.swift */,
 				500A1B721B2FA4FC008FF217 /* json.swift */,
@@ -225,7 +231,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				504B2BF01B2E50D700B7F804 /* ViewController.swift in Sources */,
+				50CEE1BC1B5E1AB800DC0BD3 /* ReviewListTableViewCell.swift in Sources */,
 				500A1B711B2F9C5D008FF217 /* AppListTableViewCell.swift in Sources */,
+				50CEE1BA1B5E1A4700DC0BD3 /* ReviewListController.swift in Sources */,
 				50D1F30D1B2E53DE005C9EFD /* SearchAPICtrl.swift in Sources */,
 				50D1F30F1B2E5D57005C9EFD /* iTunesRSSGenerator.swift in Sources */,
 				504B2BEE1B2E50D700B7F804 /* AppDelegate.swift in Sources */,
