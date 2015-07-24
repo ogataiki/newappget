@@ -112,7 +112,7 @@ class ViewController: UIViewController
         if let tmp = url
         {
             if let indicator = loadingIndicator {
-                indicator.stopAnimating();
+                indicator.startAnimating();
             }
             
             var myRequest:NSURLRequest  = NSURLRequest(URL: url);
@@ -154,7 +154,7 @@ class ViewController: UIViewController
         if let tmp = url
         {
             if let indicator = loadingIndicator {
-                indicator.stopAnimating();
+                indicator.startAnimating();
             }
             
             var myRequest:NSURLRequest  = NSURLRequest(URL: url);
@@ -183,10 +183,17 @@ class ViewController: UIViewController
 
 
     @IBAction func refreshAction(sender: UIBarButtonItem) {
+        if isListUpdating {
+            return;
+        }
         downloadRSSFeed();
     }
     
     @IBAction func anyAction(sender: UIBarButtonItem) {
+        
+        if isListUpdating {
+            return;
+        }
         
         let alert = UIAlertController(title:"termを入力",
             message: "",
