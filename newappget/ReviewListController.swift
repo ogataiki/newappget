@@ -104,6 +104,7 @@ class ReviewListController: UIViewController
             else {
                 // パース
                 var review = ReviewData();
+                //review.parseXML(data!);
                 review.parseJSON(nsstr as String);
                 if reviewPage < UInt(reviewData.count) {
                     reviewData[Int(reviewPage)] = review;

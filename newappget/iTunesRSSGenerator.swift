@@ -56,16 +56,20 @@ class iTunesRSSGenerator
     }
     
     func makeURL_reviews(country: Country = Country.us
-        , page: UInt = 1
+        , page: UInt = 0
         , appid: UInt = 0
         , sortby: String = "mostrecent"
         , outputformat: OutputFormat = OutputFormat.json) -> NSURL!
     {
+        return NSURL(string: "https://itunes.apple.com/jp/rss/customerreviews/page=6/id=975126432/sortby=mostrecent/xml");
+        
         var url = "\(baseURL)/";
         url +=  "\(country.rawValue)/";
         url += "rss/";
         url += "customerreviews/";
-        url += "page=\(page)/";
+        if page > 0 {
+            url += "page=\(page)/";
+        }
         url += "id=\(appid)/";
         url += "sortby=\(sortby)/";
         url += "\(outputformat.rawValue)";
@@ -420,7 +424,111 @@ struct ReviewData {
         }
     }
     
+    mutating func parseXML(data: NSData) {
+        let parser = ReviewXmlParser();
+        parser.parse(data, target: self);
+    }
+    
     mutating func reset() {
         entryList = [];
+    }
+}
+
+
+
+class ReviewXmlParser: NSObject, NSXMLParserDelegate {
+    
+    var reviewData = ReviewData();
+    
+    // パース用のワーク
+    var _ParseKey: String! = ""
+
+    func parse(data: NSData, target: ReviewData) {
+        var parser : NSXMLParser? = NSXMLParser(data: data)
+        if parser != nil {
+            reviewData = target;
+            parser!.delegate = self;
+            parser!.parse()
+        }
+        else {
+            // パースに失敗した時
+            println("failed to parse XML")
+        }
+    }
+    
+    // XML読み込み開始
+    func parserDidStartDocument(parser: NSXMLParser)
+    {
+        
+    }
+    
+    // XML読み込み完了
+    func parserDidEndDocument(parser: NSXMLParser)
+    {
+        
+    }
+    
+    // タグの最初
+    func parser(parser: NSXMLParser
+        , didStartElement elementName: String
+        , namespaceURI: String?
+        , qualifiedName qName: String?
+        , attributes attributeDict: [NSObject : AnyObject])
+    {
+        // elementName = 要素名
+        // attributeDictのkey = 属性
+        // attributeDictの中身 = 属性値
+        
+        _ParseKey = elementName
+
+        if elementName == "link" {
+            let keys = attributeDict.keys;
+            var rel: String = attributeDict[NSString(string: "rel")] as! String;
+            var href: String = attributeDict["href"] as! String;
+            reviewData.link_lists[rel] = href;
+        }
+        /*
+        
+        if elementName == "Items" {
+            // Itemオブジェクトを保存するItems配列を初期化
+            _Items = []
+            
+        } else if elementName == "Item" {
+            // Itemオブジェクトの初期化
+            _Item = Item()
+        }
+        */
+    }
+    
+    // タグの最後
+    func parser(parser: NSXMLParser
+        , didEndElement elementName: String
+        , namespaceURI: String?
+        , qualifiedName qName: String?)
+    {
+        /*
+        if elementName == "Item" {
+            _Items!.append(_Item!)
+        }
+        
+        */
+        
+        _ParseKey = ""
+    }
+    
+    // 各項目の値を読み込み
+    func parser(parser: NSXMLParser, foundCharacters string: String?)
+    {
+        /*
+        if _ParseKey == "ItemName" {
+            _Item!.itemName = string
+            
+        } else if _ParseKey == "ItemPrice" {
+            _Item!.itemPrice = string.toInt()
+            
+        } else {
+            // nop
+        }
+        */
     }
 }
