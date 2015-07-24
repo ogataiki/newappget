@@ -6,18 +6,36 @@ class ViewController: UIViewController
 {
 
     @IBOutlet weak var naviBar: UINavigationBar!
+    @IBOutlet weak var titleLabel: UINavigationItem!
     @IBOutlet weak var toolBar: UIToolbar!
     
     @IBOutlet weak var tableView: UITableView!
+    
+    enum LoadMode: Int {
+        case rss = 0
+        case search
+    }
+    var loadMode: LoadMode = LoadMode.rss;
     
     var listdata: iTunesRSSData = iTunesRSSData();
     var listLookupData: [LookupAPIData] = [];
     var searchData = SearchAPIData();
     
+    var searchTerm: String = "";
+    
     var cell_load_stac: [String : UInt8] = [:];
     
     var isListUpdating: Bool = false;
     
+    var loadingIndicator: UIActivityIndicatorView!;
+    func settingIndicator() {
+        loadingIndicator = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.Gray)
+        loadingIndicator.frame = CGRectMake(0, 0, 20, 20);
+        loadingIndicator.center = self.view.center;
+        loadingIndicator.hidesWhenStopped = true;
+        self.view.addSubview(loadingIndicator);
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -25,8 +43,10 @@ class ViewController: UIViewController
         tableView.dataSource = self;
         tableView.delegate = self;
         
+        settingIndicator();
+        
         // リストデータ更新
-        //downloadRSSFeed();
+        downloadRSSFeed();
     }
 
     override func didReceiveMemoryWarning() {
@@ -35,9 +55,19 @@ class ViewController: UIViewController
     }
     
     func downloadSearchList(term: String) {
+        
+        isListUpdating = true;
+
+        searchData.reset();
+        searchTerm = term;
+        
         var url = SearchAPICtrl.instance.makeSearchURL(term: term);
         if let tmp = url
         {
+            if let indicator = loadingIndicator {
+                indicator.startAnimating();
+            }
+            
             var myRequest:NSURLRequest  = NSURLRequest(URL: url);
             NSURLConnection.sendAsynchronousRequest(myRequest
                 , queue: NSOperationQueue.mainQueue()
@@ -47,13 +77,22 @@ class ViewController: UIViewController
     }
     func responseSearchList(res:NSURLResponse?, data:NSData?, error:NSError?) {
         
+        if let indicator = loadingIndicator {
+            indicator.stopAnimating();
+        }
+        
         // レスポンスをを文字列に変換.
         if let nsstr = NSString(data: data!, encoding: NSUTF8StringEncoding)
         {
             // パース
             searchData.parseJSON(nsstr as String);
+
+            isListUpdating = false;
+
+            titleLabel.title = searchTerm;
+            loadMode = LoadMode.search;
+            self.tableView.reloadData();
             
-            tableView.reloadData();
         }
         else { println("downloadSearchList data error"); }
     }
@@ -72,6 +111,10 @@ class ViewController: UIViewController
             , genre: iTunesRSSGenerator.Genre.game);
         if let tmp = url
         {
+            if let indicator = loadingIndicator {
+                indicator.stopAnimating();
+            }
+            
             var myRequest:NSURLRequest  = NSURLRequest(URL: url);
             NSURLConnection.sendAsynchronousRequest(myRequest
                 , queue: NSOperationQueue.mainQueue()
@@ -88,9 +131,6 @@ class ViewController: UIViewController
             // パース
             listdata.parseJSON(nsstr as String
                 , targetGenre: [iTunesRSSGenerator.Genre.game]
-                , targetYear: "2015"
-                , targetMonth: "07"
-                , targetDay: "01"
             );
             
             listLookupData = [LookupAPIData](count: listdata.enrtyList.count, repeatedValue: LookupAPIData());
@@ -100,6 +140,10 @@ class ViewController: UIViewController
     
     func responseRSSFeed_freeGame(res:NSURLResponse?, data:NSData?, error:NSError?) {
         
+        if let indicator = loadingIndicator {
+            indicator.stopAnimating();
+        }
+
         responseRSSFeed(data);
         
         var url = iTunesRSSGenerator.instance.makeURL(country: iTunesRSSGenerator.Country.jp
@@ -109,6 +153,10 @@ class ViewController: UIViewController
             , genre: iTunesRSSGenerator.Genre.game);
         if let tmp = url
         {
+            if let indicator = loadingIndicator {
+                indicator.stopAnimating();
+            }
+            
             var myRequest:NSURLRequest  = NSURLRequest(URL: url);
             NSURLConnection.sendAsynchronousRequest(myRequest
                 , queue: NSOperationQueue.mainQueue()
@@ -119,16 +167,26 @@ class ViewController: UIViewController
     
     func responseRSSFeed_paidGame(res:NSURLResponse?, data:NSData?, error:NSError?) {
         
+        if let indicator = loadingIndicator {
+            indicator.stopAnimating();
+        }
+
         responseRSSFeed(data);
         
         isListUpdating = false;
         
+        titleLabel.title = "新着ゲーム一覧";
+
+        loadMode = LoadMode.rss;
         tableView.reloadData();
     }
 
 
     @IBAction func refreshAction(sender: UIBarButtonItem) {
-        //downloadRSSFeed();
+        downloadRSSFeed();
+    }
+    
+    @IBAction func anyAction(sender: UIBarButtonItem) {
         
         let alert = UIAlertController(title:"termを入力",
             message: "",
@@ -164,9 +222,6 @@ class ViewController: UIViewController
         presentViewController(alert, animated: true, completion: nil)
     }
     
-    @IBAction func anyAction(sender: UIBarButtonItem) {
-    }
-    
     
     //
     // テーブルビュー
@@ -174,8 +229,12 @@ class ViewController: UIViewController
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
-        //return listdata.enrtyList.count;
-        return searchData.results.count;
+        if loadMode == LoadMode.search {
+            return searchData.results.count;
+        }
+        else {
+            return listdata.enrtyList.count;
+        }
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath:NSIndexPath) -> UITableViewCell
@@ -194,94 +253,49 @@ class ViewController: UIViewController
         cell.imageView?.image = nil;
         cell.textLabel?.text = "";
         
-        /*
-        let data = listdata.enrtyList[indexPath.row];
-
-        cell.appTitle?.text = data.appname;
-        if data.price_amount == 0
-        {
-            cell.appPrice?.text = "無料";
-        }
-        else
-        {
-            cell.appPrice?.text = data.price_label;
-        }
-        
-        cell.appIcon?.image = nil;
-        cell.appGenre?.text = data.category_genre;
-        cell.appReview?.text = "";
-        
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
+        if loadMode == LoadMode.search {
             
-            // 再利用の場合、このセルを対象に行っていたロードを無視する。
-            if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
+            let data = searchData.results[indexPath.row];
+            
+            cell.appTitle?.text = data.trackName;
+            cell.appPrice?.text = data.formattedPrice;
+            
+            cell.appIcon?.image = nil;
+            cell.appGenre?.text = data.primaryGenreName;
+            cell.appReview?.text = "";
+            
+            var reviewtextlabel = "評価：";
+            var reviewtext = String(format: "%.1f", data.averageUserRating);
+            if reviewtext == "0.0" {
+                reviewtext = "なし"
+            }
+            switch data.averageUserRating {
+            case let n where n >= 4.5:
+                cell.appReview?.textColor = UIColor.redColor();
+            case let n where n >= 4.0:
+                cell.appReview?.textColor = UIColor.purpleColor();
+            case let n where n >= 3.0:
+                cell.appReview?.textColor = UIColor.blackColor();
+            case let n where n >= 2.0:
+                cell.appReview?.textColor = UIColor.blueColor();
+            default:
+                cell.appReview?.textColor = UIColor.lightGrayColor();
+            }
+            cell.appReview?.text = reviewtextlabel + reviewtext;
+            
+            let genres = data.genres;
+            let genreIds = data.genreIds;
+            if genres.count >= 2 && genreIds.count >= 2 && genreIds[0] == "6014" {
+                cell.appGenre?.text = genres[1];
+            }
+            
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
                 
-                var url = SearchAPICtrl.instance.makeLookupURL(bundleid: data.bundleId, country: SearchAPICtrl.Country.jp);
-                if let tmp = url
-                {
-                    var myRequest: NSURLRequest = NSURLRequest(URL: url);
-                    var response: NSURLResponse?;
-                    var error: NSError?;
-                    var res = NSURLConnection.sendSynchronousRequest(myRequest, returningResponse: &response, error: &error);
-                    
-                    if let httpResponse = response as? NSHTTPURLResponse
-                    {
-                        if httpResponse.statusCode == 200
-                        {
-                            if let nsstr = NSString(data: res!, encoding: NSUTF8StringEncoding)
-                            {
-                                self.listLookupData[indexPath.row].parseJSON(nsstr as String);
-                                
-                                if self.listLookupData[indexPath.row].results.count > 0
-                                {
-                                    // 再利用の場合、このセルを対象に行っていたロードを無視する。
-                                    if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
-                                        
-                                        // メインスレッドでUI更新処理
-                                        dispatch_sync(dispatch_get_main_queue(), { () -> Void in
-                                            
-                                            var reviewtextlabel = "評価：";
-                                            var reviewtext = String(format: "%.1f"
-                                                , self.listLookupData[indexPath.row].results[0].averageUserRating);
-                                            if reviewtext == "0.0" {
-                                                reviewtext = "なし"
-                                            }
-                                            switch self.listLookupData[indexPath.row].results[0].averageUserRating {
-                                            case let n where n >= 4.5:
-                                                cell.appReview?.textColor = UIColor.redColor();
-                                            case let n where n >= 4.0:
-                                                cell.appReview?.textColor = UIColor.purpleColor();
-                                            case let n where n >= 3.0:
-                                                cell.appReview?.textColor = UIColor.blackColor();
-                                            case let n where n >= 2.0:
-                                                cell.appReview?.textColor = UIColor.blueColor();
-                                            default:
-                                                cell.appReview?.textColor = UIColor.lightGrayColor();
-                                            }
-                                            cell.appReview?.text = reviewtextlabel + reviewtext;
-                                            
-                                            let genres = self.listLookupData[indexPath.row].results[0].genres;
-                                            let genreIds = self.listLookupData[indexPath.row].results[0].genreIds;
-                                            if genres.count >= 2 && genreIds.count >= 2 && genreIds[0] == "6014" {
-                                                cell.appGenre?.text = genres[1];
-                                            }
-                                            
-                                            cell.layoutSubviews();
-                                        })
-                                    }
-                                }
-                            }
-                            else { println("response error"); }
-                        }
-                        else { println("response status:%d", httpResponse.statusCode); }
-                    }
-                    else { println("response error"); }
-                } else { println("load error"); }
-                
+                // 再利用の場合、このセルを対象に行っていたロードを無視する。
                 // 画像更新
-                if( self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount && data.images.count > 0 )
+                if( self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount)
                 {
-                    let imageURL = data.images[data.images.count-1].urllabel;
+                    let imageURL = data.artworkUrl100;
                     if let url = NSURL(string: imageURL) {
                         if let imagedata = NSData(contentsOfURL: url) {
                             let image = UIImage(data: imagedata);
@@ -297,86 +311,140 @@ class ViewController: UIViewController
                         }
                     }
                 }
-            }
-        })
-        */
-        
-        let data = searchData.results[indexPath.row];
-        
-        cell.appTitle?.text = data.trackName;
-        cell.appPrice?.text = data.formattedPrice;
-        
-        cell.appIcon?.image = nil;
-        cell.appGenre?.text = data.primaryGenreName;
-        cell.appReview?.text = "";
-        
-        var reviewtextlabel = "評価：";
-        var reviewtext = String(format: "%.1f", data.averageUserRating);
-        if reviewtext == "0.0" {
-            reviewtext = "なし"
+            })
         }
-        switch data.averageUserRating {
-        case let n where n >= 4.5:
-            cell.appReview?.textColor = UIColor.redColor();
-        case let n where n >= 4.0:
-            cell.appReview?.textColor = UIColor.purpleColor();
-        case let n where n >= 3.0:
-            cell.appReview?.textColor = UIColor.blackColor();
-        case let n where n >= 2.0:
-            cell.appReview?.textColor = UIColor.blueColor();
-        default:
-            cell.appReview?.textColor = UIColor.lightGrayColor();
-        }
-        cell.appReview?.text = reviewtextlabel + reviewtext;
-        
-        let genres = data.genres;
-        let genreIds = data.genreIds;
-        if genres.count >= 2 && genreIds.count >= 2 && genreIds[0] == "6014" {
-            cell.appGenre?.text = genres[1];
-        }
-
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
+        else {
+            let data = listdata.enrtyList[indexPath.row];
             
-            // 再利用の場合、このセルを対象に行っていたロードを無視する。
-            // 画像更新
-            if( self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount)
+            cell.appTitle?.text = data.appname;
+            if data.price_amount == 0
             {
-                let imageURL = data.artworkUrl100;
-                if let url = NSURL(string: imageURL) {
-                    if let imagedata = NSData(contentsOfURL: url) {
-                        let image = UIImage(data: imagedata);
+                cell.appPrice?.text = "無料";
+            }
+            else
+            {
+                cell.appPrice?.text = data.price_label;
+            }
+            
+            cell.appIcon?.image = nil;
+            cell.appGenre?.text = data.category_genre;
+            cell.appReview?.text = "";
+            
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), { () -> Void in
+                
+                // 再利用の場合、このセルを対象に行っていたロードを無視する。
+                if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
+                    
+                    var url = SearchAPICtrl.instance.makeLookupURL(bundleid: data.bundleId, country: SearchAPICtrl.Country.jp);
+                    if let tmp = url
+                    {
+                        var myRequest: NSURLRequest = NSURLRequest(URL: url);
+                        var response: NSURLResponse?;
+                        var error: NSError?;
+                        var res = NSURLConnection.sendSynchronousRequest(myRequest, returningResponse: &response, error: &error);
                         
-                        // 再利用の場合、このセルを対象に行っていたロードを無視する。
-                        if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
-                            dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                                cell.appIcon?.image = image;
+                        if let httpResponse = response as? NSHTTPURLResponse
+                        {
+                            if httpResponse.statusCode == 200
+                            {
+                                if let nsstr = NSString(data: res!, encoding: NSUTF8StringEncoding)
+                                {
+                                    self.listLookupData[indexPath.row].parseJSON(nsstr as String);
+                                    
+                                    if self.listLookupData[indexPath.row].results.count > 0
+                                    {
+                                        // 再利用の場合、このセルを対象に行っていたロードを無視する。
+                                        if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
+                                            
+                                            // メインスレッドでUI更新処理
+                                            dispatch_sync(dispatch_get_main_queue(), { () -> Void in
+                                                
+                                                var reviewtextlabel = "評価：";
+                                                var reviewtext = String(format: "%.1f"
+                                                    , self.listLookupData[indexPath.row].results[0].averageUserRating);
+                                                if reviewtext == "0.0" {
+                                                    reviewtext = "なし"
+                                                }
+                                                switch self.listLookupData[indexPath.row].results[0].averageUserRating {
+                                                case let n where n >= 4.5:
+                                                    cell.appReview?.textColor = UIColor.redColor();
+                                                case let n where n >= 4.0:
+                                                    cell.appReview?.textColor = UIColor.purpleColor();
+                                                case let n where n >= 3.0:
+                                                    cell.appReview?.textColor = UIColor.blackColor();
+                                                case let n where n >= 2.0:
+                                                    cell.appReview?.textColor = UIColor.blueColor();
+                                                default:
+                                                    cell.appReview?.textColor = UIColor.lightGrayColor();
+                                                }
+                                                cell.appReview?.text = reviewtextlabel + reviewtext;
+                                                
+                                                let genres = self.listLookupData[indexPath.row].results[0].genres;
+                                                let genreIds = self.listLookupData[indexPath.row].results[0].genreIds;
+                                                if genres.count >= 2 && genreIds.count >= 2 && genreIds[0] == "6014" {
+                                                    cell.appGenre?.text = genres[1];
+                                                }
+                                                
+                                                cell.layoutSubviews();
+                                            })
+                                        }
+                                    }
+                                }
+                                else { println("response error"); }
+                            }
+                            else { println("response status:%d", httpResponse.statusCode); }
+                        }
+                        else { println("response error"); }
+                    } else { println("load error"); }
+                    
+                    // 画像更新
+                    if( self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount && data.images.count > 0 )
+                    {
+                        let imageURL = data.images[data.images.count-1].urllabel;
+                        if let url = NSURL(string: imageURL) {
+                            if let imagedata = NSData(contentsOfURL: url) {
+                                let image = UIImage(data: imagedata);
                                 
-                                cell.layoutSubviews();
-                            })
+                                // 再利用の場合、このセルを対象に行っていたロードを無視する。
+                                if self.isListUpdating == false && self.cell_load_stac[celluuid]! == cellreusecount {
+                                    dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                                        cell.appIcon?.image = image;
+                                        
+                                        cell.layoutSubviews();
+                                    })
+                                }
+                            }
                         }
                     }
                 }
-            }
-        })
-
+            })
+        }
+    
         return cell
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath:NSIndexPath)
     {
-        /*
-        let data = listdata.enrtyList[indexPath.row];
-
-        let url = NSURL(string: data.link_href);
-        if UIApplication.sharedApplication().canOpenURL(url!){
-            UIApplication.sharedApplication().openURL(url!)
-        }
-        */
-        
         // ハイライト消す
         tableView.deselectRowAtIndexPath(indexPath, animated: true);
         
-        let data = searchData.results[indexPath.row];
+        var url: String = "";
+        var appid: UInt = 0;
+        var appname: String = "";
+        
+        if loadMode == LoadMode.search {
+            
+            let data = searchData.results[indexPath.row];
+            url = data.trackViewUrl;
+            appid = data.trackId;
+            appname = data.trackName;
+        }
+        else {
+            let data = listdata.enrtyList[indexPath.row];
+            url = data.link_href;
+            appid = UInt(NSString(string: data.id).integerValue);
+            appname = data.appname;
+        }
         
         let alert = UIAlertController(title:"なにする？",
             message: "",
@@ -392,7 +460,7 @@ class ViewController: UIViewController
             handler:{
                 (action:UIAlertAction!) -> Void in
                 //ストアへ
-                let url = NSURL(string: data.trackViewUrl);
+                let url = NSURL(string: url);
                 if UIApplication.sharedApplication().canOpenURL(url!){
                     UIApplication.sharedApplication().openURL(url!)
                 }
@@ -405,7 +473,7 @@ class ViewController: UIViewController
                 let storyboard:UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
                 let nextview = storyboard.instantiateViewControllerWithIdentifier("ReviewListController") as! ReviewListController
                 nextview.modalTransitionStyle = UIModalTransitionStyle.CrossDissolve;
-                nextview.setting(appId: data.trackId, title: data.trackName);
+                nextview.setting(appId: appid, title: appname);
                 self.presentViewController(nextview, animated: true, completion: nil)
         })
         alert.addAction(cancelAction)

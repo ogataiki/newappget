@@ -380,7 +380,7 @@ struct ReviewData {
         }
     }
     
-    var enrtyList: [Entry] = [];
+    var entryList: [Entry] = [];
     
     mutating func parseJSON(jsonStr: String) {
             
@@ -403,7 +403,7 @@ struct ReviewData {
                 else {
                     var entryBuf = ReviewData.Entry();
                     entryBuf.parse(e);
-                    enrtyList += [entryBuf];
+                    entryList.insert(entryBuf, atIndex: 0);
                 }
                 index++;
             }
@@ -421,6 +421,6 @@ struct ReviewData {
     }
     
     mutating func reset() {
-        enrtyList = [];
+        entryList = [];
     }
 }

@@ -213,6 +213,10 @@ struct SearchAPIData {
             results += [resultBuf];
         }
     }
+    
+    mutating func reset() {
+        results = [];
+    }
 }
 
 struct LookupAPIData {
@@ -385,5 +389,9 @@ struct LookupAPIData {
             resultBuf.parse(result);
             results += [resultBuf];
         }
+    }
+    
+    mutating func reset() {
+        results = [];
     }
 }
